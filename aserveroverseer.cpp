@@ -20,32 +20,45 @@ void AServerOverseer::onMessageReceived(const QString message)
 {
     if ( !server->CanReply() ) return; // cannot reply so do not start a new ANTS2 server
 
-    QJsonObject msg = objectFromString(message);
-    qDebug() << msg;
+    QJsonObject jsIn = objectFromString(message);
+    qDebug() << jsIn;
 
-    QString reply;
-    if (msg.contains("command"))
+    QJsonObject jsOut;
+    if (jsIn.contains("command"))
     {
         int requestedCPUs = 1;
-        if (msg.contains("cpus"))
-                requestedCPUs = msg["cpus"].toInt();
+        if (jsIn.contains("cpus"))
+                requestedCPUs = jsIn["cpus"].toInt();
 
         if (requestedCPUs > CPUpool)
-            reply = QStringLiteral("fail:cpus=") + QString::number(CPUpool);
+        {
+            jsOut["result"] = false;
+            jsOut["error"] = "available cpus=" + QString::number(CPUpool);
+        }
         else
         {
             int port = findFreePort();
             if (port == -1)
-                reply = QStringLiteral("fail:no free ports");
+            {
+                jsOut["result"] = false;
+                jsOut["error"] = "no free ports";
+            }
             else
             {
+                jsOut["result"] = true;
                 AServerRecord* sr = startProcess(port, requestedCPUs);
-                reply = QStringLiteral("ok:port=") + QString::number(port);
+                jsOut["port"] = port;
             }
         }
     }
-    else reply = "fail:request new ants2 server with e.g. {command:'new', cpus:1}";
+    else
+    {
+        jsOut["result"] = true;
+        jsOut["error"] = "bad format of request. example of valid one: {\"command\":\"new\", \"cpus\":1}";
+    }
 
+    QJsonDocument doc(jsOut);
+    QString reply(doc.toJson(QJsonDocument::Compact));
     server->ReplyAndCloseConnection(reply);
 }
 
