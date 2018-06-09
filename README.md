@@ -1,0 +1,2 @@
+# ServDisp
+WebSocket server dispatcher
