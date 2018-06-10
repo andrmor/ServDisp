@@ -4,6 +4,8 @@
 #include <QWebSocket>
 #include <QDebug>
 #include <QNetworkInterface>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 AWebSocketServer::AWebSocketServer(QObject *parent) :
     QObject(parent),
@@ -44,6 +46,13 @@ bool AWebSocketServer::CanReply()
     return false;
 }
 
+void AWebSocketServer::ReplyAndCloseConnection(const QJsonObject &json)
+{
+    QJsonDocument doc(json);
+    QString reply(doc.toJson(QJsonDocument::Compact));
+    ReplyAndCloseConnection(reply);
+}
+
 void AWebSocketServer::ReplyAndCloseConnection(const QString &message)
 {
     if ( !CanReply() ) return;
@@ -51,7 +60,7 @@ void AWebSocketServer::ReplyAndCloseConnection(const QString &message)
     qDebug() << "Reply text message:"<<message;
 
     client->sendTextMessage(message);
-    client->close(QWebSocketProtocol::CloseCodeNormal, "lalalala");
+    client->close();  //QWebSocketProtocol::CloseCodeNormal, "test");
 }
 
 void AWebSocketServer::onNewConnection()
@@ -60,10 +69,10 @@ void AWebSocketServer::onNewConnection()
     QWebSocket *pSocket = server->nextPendingConnection();
 
     if (client)
-    {
+    { //paranoic
         //deny - exclusive connections!
         qDebug() << "Connection denied: another client is already connected";
-        pSocket->sendTextMessage("fail:overseer_busy");
+        pSocket->sendTextMessage("{\"result\":false, \"error\":\"another session is not yet finished\"}");
         pSocket->close();
     }
     else
@@ -74,7 +83,7 @@ void AWebSocketServer::onNewConnection()
         connect(pSocket, &QWebSocket::textMessageReceived, this, &AWebSocketServer::onTextMessageReceived);
         connect(pSocket, &QWebSocket::disconnected, this, &AWebSocketServer::onSocketDisconnected);
 
-        client->sendTextMessage("Request new ants2 server with e.g. {\"command\":\"new\", \"cpus\":1}");
+        client->sendTextMessage("{\"result\":true}");
 
         watchdog->start();
     }

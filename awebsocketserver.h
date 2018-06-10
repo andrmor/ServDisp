@@ -6,6 +6,7 @@
 
 class QWebSocketServer;
 class QWebSocket;
+class QJsonObject;
 
 class AWebSocketServer : public QObject
 {
@@ -17,6 +18,7 @@ public:
     bool StartListen(quint16 port);
 
     bool CanReply();
+    void ReplyAndCloseConnection(const QJsonObject& json);
     void ReplyAndCloseConnection(const QString& message);
 
     const QString GetUrl() const;
