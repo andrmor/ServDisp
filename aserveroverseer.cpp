@@ -4,10 +4,12 @@
 #include <QProcess>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QFile>
 
-AServerOverseer::AServerOverseer(quint16 Port)
+AServerOverseer::AServerOverseer(quint16 Port, QSet<quint16> ServerPorts, int MaxCPUs)
 {
-    AllocatedPorts = {1111,2222};
+    AllocatedPorts = ServerPorts;
+    CPUpool = MaxCPUs;
 
     server = new AWebSocketServer(this);
 
@@ -110,10 +112,12 @@ void AServerOverseer::processCommandHelp(const QJsonObject &jsIn, QJsonObject &j
 
 AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
 {
-    QString command = "calc";//"ants2";
+    QString command = "D:/QtProjects/ANTS2git/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2";  //"calc";
     QStringList arguments;
 
     QString ticket = generateTicket();
+
+    arguments << "-o" << "d:/tmp/a.txt" << "-s" << "-p" << QString::number(port) << "-t" << ticket;
 
     QProcess *process = new QProcess(this);
 

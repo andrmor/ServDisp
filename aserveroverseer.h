@@ -17,7 +17,7 @@ class AServerOverseer : public QObject
     Q_OBJECT
 
 public:
-    AServerOverseer(quint16 Port);
+    AServerOverseer(quint16 Port, QSet<quint16> ServerPorts, int MaxCPUs);
 
 public slots:
     void onMessageReceived(const QString message);
@@ -35,7 +35,7 @@ signals:
 private:
     AWebSocketServer* server;
     int CPUpool = 4;
-    QSet<int> AllocatedPorts;
+    QSet<quint16> AllocatedPorts;
 
     QVector<AServerRecord*> RunningServers;
     int MaxRunningTime;
