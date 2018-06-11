@@ -3,18 +3,33 @@
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <QDebug>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Dispatcher for ANTS2 web socket server(s). Use webs socket protocol!\nIf white list is not provided, all IPs are allowed.");
+    parser.setApplicationDescription("Dispatcher for ANTS2 web socket server(s)");
     parser.addHelpOption();
+    parser.addPositionalArgument("config", QCoreApplication::translate("main", "Json file with settings"));
     parser.addPositionalArgument("port", QCoreApplication::translate("main", "Port for requests (web socket protocol)"));
-    //parser.addPositionalArgument("file", QCoreApplication::translate("main", "File with allowed IP addresses"));
     parser.addPositionalArgument("sockets", QCoreApplication::translate("main", "List of ports which can be given to the servers (e.g. 1111;3333;...)"));
-    parser.addPositionalArgument("cpus", QCoreApplication::translate("main", "Maximum number of CPUs to use"));
+    parser.addPositionalArgument("threads", QCoreApplication::translate("main", "Maximum number of sim/rec threads to use"));
+    parser.addPositionalArgument("exec", QCoreApplication::translate("main", "Server file to execute"));
+
+    QCommandLineOption configOption(QStringList() << "f" << "file",
+                                  QCoreApplication::translate("main", "Sets the config file (command line arguments override settings from file)."),
+                                  QCoreApplication::translate("main", "config"));
+    parser.addOption(configOption);
+
+    QCommandLineOption execOption(QStringList() << "e" << "exec",
+                                  QCoreApplication::translate("main", "Sets the server file to execute."),
+                                  QCoreApplication::translate("main", "exec"));
+    parser.addOption(execOption);
 
     QCommandLineOption portOption(QStringList() << "p" << "port",
                                   QCoreApplication::translate("main", "Sets port for requests."),
@@ -26,29 +41,54 @@ int main(int argc, char *argv[])
                                   QCoreApplication::translate("main", "sockets"));
     parser.addOption(socketsOption);
 
-    QCommandLineOption cpusOption(QStringList() << "c" << "cpus",
-                                  QCoreApplication::translate("main", "Sets max number of CPUs."),
-                                  QCoreApplication::translate("main", "cpus"));
-    parser.addOption(cpusOption);
+    QCommandLineOption threadsOption(QStringList() << "t" << "threads",
+                                  QCoreApplication::translate("main", "Sets max number of sim/rec threads."),
+                                  QCoreApplication::translate("main", "threads"));
+    parser.addOption(threadsOption);
 
-    //QCommandLineOption listOption(QStringList() << "l" << "list",
-    //                              QCoreApplication::translate("main", "Sets white IP list."),
-    //                              QCoreApplication::translate("main", "file"));
-    //parser.addOption(listOption);
 
+    AServerOverseer overseer;
+
+  // ----- processing command line input -----
     parser.process(a);
 
-    quint16 Port = parser.value(portOption).toUShort();
-    //QString FileName = parser.value(listOption);
-    QString serverPorts = parser.value(socketsOption);
-    QStringList sockets = serverPorts.split(";", QString::SkipEmptyParts);
-    QSet<quint16> ws;
-    for (const QString s : sockets) ws << s.toUShort();
-    int MaxCPUs = parser.value(cpusOption).toInt();
+    if (parser.isSet(configOption))
+    {
+        QString fileName = parser.value(configOption);
+        bool bOK = overseer.ConfigureFromFile( fileName );
+        if (!bOK)
+        {
+            qDebug() << "Cannot access the file with settings: " << fileName;
+            exit(1);
+        }
+    }
 
-    qDebug() << "Port for requests =" << Port << " Ports for servers="<<ws << " CPU pool="<<MaxCPUs;//<<"White list file ="<< FileName;
+    if (parser.isSet(execOption))
+    {
+        QString sa = parser.value(execOption);
+        overseer.SetServerApplication(sa);
+    }
+    if (parser.isSet(portOption))
+    {
+        quint16 Port = parser.value(portOption).toUShort();
+        overseer.SetPort(Port);
+    }
+    if (parser.isSet(socketsOption))
+    {
+        QString serverPorts = parser.value(socketsOption);
+        QStringList sockets = serverPorts.split(";", QString::SkipEmptyParts);
+        QSet<quint16> ws;
+        for (const QString s : sockets) ws << s.toUShort();
+        overseer.SetServerPorts(ws);
+    }
+    if (parser.isSet(socketsOption))
+    {
+        int maxThreads = parser.value(threadsOption).toInt();
+        overseer.SetMaxThreads(maxThreads);
+    }
 
-    AServerOverseer overseer(Port, ws, MaxCPUs);
+    bool bOK = overseer.StartListen();
 
-    return a.exec();
+    if (bOK) return a.exec();
+    else return -1;
 }

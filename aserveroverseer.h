@@ -17,7 +17,17 @@ class AServerOverseer : public QObject
     Q_OBJECT
 
 public:
-    AServerOverseer(quint16 Port, QSet<quint16> ServerPorts, int MaxCPUs);
+    void  SetPort(quint16 port) {Port = port;}
+    void  SetServerPorts(QSet<quint16> serverPorts) {AllocatedPorts = serverPorts;}
+    void  SetMaxThreads(int maxThreads) {MaxThreads = maxThreads;}
+    void  SetServerApplication(const QString& command) {ServerFileName = command;}
+    void  SetArguments(const QStringList& arguments) {Arguments = arguments;}
+
+    bool ConfigureFromFile(const QString& fileName); //overrides the settings!
+
+    bool StartListen();
+
+    const QString GetListOfPorts();
 
 public slots:
     void onMessageReceived(const QString message);
@@ -34,11 +44,15 @@ signals:
 
 private:
     AWebSocketServer* server;
-    int CPUpool = 4;
+    quint16 Port = 0;
+    int MaxThreads = 1;
     QSet<quint16> AllocatedPorts;
 
     QVector<AServerRecord*> RunningServers;
     int MaxRunningTime;
+
+    QString ServerFileName;
+    QStringList Arguments;
 
 private:
     const QJsonObject objectFromString(const QString &in);
@@ -47,6 +61,8 @@ private:
     void              processCommandAbort(const QJsonObject &jsIn, QJsonObject &jsOut);
     void              processCommandReport(const QJsonObject &jsIn, QJsonObject &jsOut);
     void              processCommandHelp(const QJsonObject &jsIn, QJsonObject &jsOut);
+
+    bool              isReady();
 };
 
 class AServerRecord : public QObject
