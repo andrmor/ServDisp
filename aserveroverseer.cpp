@@ -19,7 +19,7 @@ bool AServerOverseer::ConfigureFromFile(const QString &fileName)
         QJsonDocument loadDoc(QJsonDocument::fromJson(ba));
         QJsonObject json = loadDoc.object();
 
-        ServerFileName = json["server"].toString();
+        ServerApp = json["server"].toString();
 
         QJsonArray ar = json["server_arguments"].toArray();
         for (int i=0; i<ar.size(); i++) Arguments << ar[i].toString();
@@ -65,20 +65,20 @@ const QString AServerOverseer::GetListOfPorts()
 
 bool AServerOverseer::isReady()
 {
-    if (ServerFileName.isEmpty())
+    if (ServerApp.isEmpty())
     {
         qDebug() << "Server application was not provided";
         return false;
     }
-    QFileInfo fi(ServerFileName);
+    QFileInfo fi(ServerApp);
     if (!fi.exists())
     {
-        qDebug() << "Not found server application:" << ServerFileName;
+        qDebug() << "Not found server application:" << ServerApp;
         return false;
     }
     if ( !fi.permission(QFile::ExeUser) )
     {
-        qDebug() << "Server application: have no permission to execute:" << ServerFileName;
+        qDebug() << "Server application: have no permission to execute:" << ServerApp;
         return false;
     }
     if (Port == 0)
@@ -93,7 +93,7 @@ bool AServerOverseer::isReady()
     }
     if (MaxThreads < 1) MaxThreads = 1;
 
-    qDebug() << "Server executable:" << ServerFileName;
+    qDebug() << "Server executable:" << ServerApp;
     if (!Arguments.isEmpty()) qDebug() << "Extra arguments:" << Arguments;
 
     qDebug() << "Port for requests:" << Port;
@@ -197,12 +197,14 @@ void AServerOverseer::processCommandHelp(const QJsonObject &jsIn, QJsonObject &j
 
 AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
 {
-    QString command = "D:/QtProjects/ANTS2git/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2";  //"calc";
-    QStringList arguments;
+    //QString ServerApp = "D:/QtProjects/ANTS2git/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2";  //"calc";
+    //QStringList Arguments;
 
     QString ticket = generateTicket();
 
-    arguments << "-o" << "d:/tmp/a.txt" << "-s" << "-p" << QString::number(port) << "-t" << ticket;
+    //Arguments << "-o" << "d:/tmp/a.txt" << "-s" << "-p" << QString::number(port) << "-t" << ticket;
+
+    Arguments << "-s" << "-p" << QString::number(port) << "-t" << ticket;
 
     QProcess *process = new QProcess(this);
 
@@ -210,8 +212,8 @@ AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
     MaxThreads -= numCPUs;
     RunningServers << sr;
 
-    QString str = command + " ";
-    for (const QString &s : arguments) str += s + " ";
+    QString str = ServerApp + " ";
+    for (const QString &s : Arguments) str += s + " ";
     qDebug() << "Executing command:" << str;
 
     QObject::connect(process, SIGNAL(finished(int)), sr, SLOT(processTerminated()));
@@ -219,7 +221,7 @@ AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
 
     QObject::connect(sr, &AServerRecord::finished, this, &AServerOverseer::oneProcessFinished);
 
-    process->start(command, arguments);
+    process->start(ServerApp, Arguments);
 
     qDebug() << "-->New server started"<<sr;
     qDebug() << "  Available CPUs:"<<MaxThreads;

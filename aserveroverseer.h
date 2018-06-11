@@ -20,7 +20,7 @@ public:
     void  SetPort(quint16 port) {Port = port;}
     void  SetServerPorts(QSet<quint16> serverPorts) {AllocatedPorts = serverPorts;}
     void  SetMaxThreads(int maxThreads) {MaxThreads = maxThreads;}
-    void  SetServerApplication(const QString& command) {ServerFileName = command;}
+    void  SetServerApplication(const QString& command) {ServerApp = command;}
     void  SetArguments(const QStringList& arguments) {Arguments = arguments;}
 
     bool ConfigureFromFile(const QString& fileName); //overrides the settings!
@@ -51,7 +51,7 @@ private:
     QVector<AServerRecord*> RunningServers;
     int MaxRunningTime;
 
-    QString ServerFileName;
+    QString ServerApp;
     QStringList Arguments;
 
 private:
