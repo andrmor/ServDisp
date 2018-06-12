@@ -1,4 +1,0 @@
-{
-	"command" : "calc",
-	"optionalArguments" : ["-o", "Ants2ServerConsoleOutput.txt"],
-}
