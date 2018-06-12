@@ -23,9 +23,9 @@ public:
     void  SetServerApplication(const QString& command) {ServerApp = command;}
     void  SetArguments(const QStringList& arguments) {Arguments = arguments;}
 
-    bool ConfigureFromFile(const QString& fileName); //overrides the settings!
+    bool  ConfigureFromFile(const QString& fileName); //overrides the settings!
 
-    bool StartListen();
+    bool  StartListen();
 
     const QString GetListOfPorts();
 
@@ -33,7 +33,7 @@ public slots:
     void onMessageReceived(const QString message);
 
 private:
-    AServerRecord* startProcess(int port, int numCPUs);
+    AServerRecord* startProcess(int port, int maxThreads);
     int findFreePort();
 
 private slots:

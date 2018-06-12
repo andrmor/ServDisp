@@ -134,12 +134,12 @@ void AServerOverseer::onMessageReceived(const QString message)
 
 void AServerOverseer::processCommandNew(const QJsonObject& jsIn, QJsonObject& jsOut)
 {
-    int requestedCPUs = 1;
+    int requestedThreads = 1;
     if (jsIn.contains("threads"))
-            requestedCPUs = jsIn["threads"].toInt();
-    if (requestedCPUs < 1) requestedCPUs = 1;
+            requestedThreads = jsIn["threads"].toInt();
+    if (requestedThreads < 1) requestedThreads = 1;
 
-    if (requestedCPUs > MaxThreads)
+    if (requestedThreads > MaxThreads)
     {
         jsOut["result"] = false;
         jsOut["error"] = "currently available threads=" + QString::number(MaxThreads);
@@ -154,7 +154,7 @@ void AServerOverseer::processCommandNew(const QJsonObject& jsIn, QJsonObject& js
         }
         else
         {
-            AServerRecord* sr = startProcess(port, requestedCPUs);
+            AServerRecord* sr = startProcess(port, requestedThreads);
 
             jsOut["result"] = true;
             jsOut["port"] = port;
@@ -195,25 +195,26 @@ void AServerOverseer::processCommandHelp(const QJsonObject &jsIn, QJsonObject &j
     jsOut["report"] = "{\"command\":\"report\"} - returns the available resources (threads and ports)";
 }
 
-AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
+AServerRecord* AServerOverseer::startProcess(int port, int maxThreads)
 {
     //QString ServerApp = "D:/QtProjects/ANTS2git/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2";  //"calc";
-    //QStringList Arguments;
+
 
     QString ticket = generateTicket();
 
     //Arguments << "-o" << "d:/tmp/a.txt" << "-s" << "-p" << QString::number(port) << "-t" << ticket;
 
-    Arguments << "-s" << "-p" << QString::number(port) << "-t" << ticket;
+    QStringList arguments = Arguments;
+    arguments << "-s" << "-p" << QString::number(port) << "-t" << ticket << "-m" << QString::number(maxThreads);
 
     QProcess *process = new QProcess(this);
 
-    AServerRecord* sr = new AServerRecord(port, numCPUs, ticket, 0, process);
-    MaxThreads -= numCPUs;
+    AServerRecord* sr = new AServerRecord(port, maxThreads, ticket, 0, process);
+    MaxThreads -= maxThreads;
     RunningServers << sr;
 
     QString str = ServerApp + " ";
-    for (const QString &s : Arguments) str += s + " ";
+    for (const QString &s : arguments) str += s + " ";
     qDebug() << "Executing command:" << str;
 
     QObject::connect(process, SIGNAL(finished(int)), sr, SLOT(processTerminated()));
@@ -221,7 +222,7 @@ AServerRecord* AServerOverseer::startProcess(int port, int numCPUs)
 
     QObject::connect(sr, &AServerRecord::finished, this, &AServerOverseer::oneProcessFinished);
 
-    process->start(ServerApp, Arguments);
+    process->start(ServerApp, arguments);
 
     qDebug() << "-->New server started"<<sr;
     qDebug() << "  Available CPUs:"<<MaxThreads;
