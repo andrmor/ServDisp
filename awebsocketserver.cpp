@@ -66,27 +66,29 @@ void AWebSocketServer::ReplyAndCloseConnection(const QString &message)
 void AWebSocketServer::onNewConnection()
 {
     qDebug() << "New connection attempt";
-    QWebSocket *pSocket = server->nextPendingConnection();
 
     if (client)
-    { //paranoic
-        //deny - exclusive connections!
-        qDebug() << "Connection denied: another client is already connected";
-        pSocket->sendTextMessage("{\"result\":false, \"error\":\"another session is not yet finished\"}");
-        pSocket->close();
-    }
-    else
     {
-        qDebug() << "Connection established with" << pSocket->peerAddress().toString();
-        client = pSocket;
-
-        connect(pSocket, &QWebSocket::textMessageReceived, this, &AWebSocketServer::onTextMessageReceived);
-        connect(pSocket, &QWebSocket::disconnected, this, &AWebSocketServer::onSocketDisconnected);
-
-        client->sendTextMessage("{\"result\":true}");
-
-        watchdog->start();
+        //deny - exclusive connections!
+        qDebug() << "Connection delayed: another client is already connected";
+        //pSocket->sendTextMessage("{\"result\":false, \"error\":\"another session is not yet finished\"}");
+        //pSocket->close();
+        return;
     }
+
+    client = server->nextPendingConnection();
+    ProcessNewClient();
+}
+
+void AWebSocketServer::ProcessNewClient()
+{
+    qDebug() << "Connection established with" << client->peerAddress().toString();
+    connect(client, &QWebSocket::textMessageReceived, this, &AWebSocketServer::onTextMessageReceived);
+    connect(client, &QWebSocket::disconnected, this, &AWebSocketServer::onSocketDisconnected);
+
+    client->sendTextMessage("{\"result\":true}");
+
+    watchdog->start();
 }
 
 void AWebSocketServer::onTextMessageReceived(const QString &message)
@@ -112,6 +114,9 @@ void AWebSocketServer::onSocketDisconnected()
         client->deleteLater();
     }
     client = 0;
+
+    client = server->nextPendingConnection();
+    if (client) ProcessNewClient();
 }
 
 void AWebSocketServer::onWatchdogTriggered()

@@ -40,6 +40,9 @@ private:
     QTimer* watchdog;
     int watchdogInterval = 5000; // 5 sec
 
+private:
+    void ProcessNewClient();
+
 };
 
 #endif // AWEBSOCKETSERVER_H
