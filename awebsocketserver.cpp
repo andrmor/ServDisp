@@ -11,7 +11,7 @@ AWebSocketServer::AWebSocketServer(QObject *parent) :
     QObject(parent),
     server(new QWebSocketServer(QStringLiteral("Dispatcher for Ants2 server"), QWebSocketServer::NonSecureMode, this))
 {
-    connect(server, &QWebSocketServer::newConnection, this, &AWebSocketServer::onNewConnection);
+    connect(server, &QWebSocketServer::newConnection, this, &AWebSocketServer::onNewConnection, Qt::QueuedConnection);
 
     watchdog = new QTimer(this);
     watchdog->setSingleShot(true);
@@ -109,7 +109,7 @@ void AWebSocketServer::onSocketDisconnected()
     if (client)
     {
         client->close();
-        delete client;
+        client->deleteLater();
     }
     client = 0;
 }
