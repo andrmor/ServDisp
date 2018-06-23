@@ -216,15 +216,10 @@ void AServerOverseer::processCommandHelp(const QJsonObject &jsIn, QJsonObject &j
 
 AServerRecord* AServerOverseer::startProcess(int port, int maxThreads)
 {
-    //QString ServerApp = "D:/QtProjects/ANTS2git/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2";  //"calc";
-
-
     QString ticket = generateTicket();
 
-    //Arguments << "-o" << "d:/tmp/a.txt" << "-s" << "-p" << QString::number(port) << "-t" << ticket;
-
     QStringList arguments = Arguments;
-    arguments << "-s" << "-p" << QString::number(port) << "-t" << ticket << "-m" << QString::number(maxThreads);
+    arguments << "-s" << "-i" << IP.toString() << "-p" << QString::number(port) << "-t" << ticket << "-m" << QString::number(maxThreads);
 
     QProcess *process = new QProcess(this);
 
