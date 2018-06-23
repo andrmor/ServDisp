@@ -7,6 +7,7 @@
 #include <QSet>
 #include <QStringList>
 #include <QJsonObject>
+#include <QHostAddress>
 
 class AServerRecord;
 class AWebSocketServer;
@@ -17,11 +18,14 @@ class AServerOverseer : public QObject
     Q_OBJECT
 
 public:
+    ~AServerOverseer();
+
     void  SetPort(quint16 port) {Port = port;}
     void  SetServerPorts(QSet<quint16> serverPorts) {AllocatedPorts = serverPorts;}
     void  SetMaxThreads(int maxThreads) {MaxThreads = maxThreads;}
     void  SetServerApplication(const QString& command) {ServerApp = command;}
     void  SetArguments(const QStringList& arguments) {Arguments = arguments;}
+    void  SetIP(const QString& ip);
 
     bool  ConfigureFromFile(const QString& fileName); //overrides the settings!
 
@@ -43,7 +47,8 @@ signals:
     void replyWith(const QString message);
 
 private:
-    AWebSocketServer* server;
+    AWebSocketServer* server = 0;
+    QHostAddress IP = QHostAddress::LocalHost;
     quint16 Port = 0;
     int MaxThreads = 1;
     QSet<quint16> AllocatedPorts;

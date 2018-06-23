@@ -1,15 +1,16 @@
 {
-	"server" : "D:/QtProjects/ANTS2/build-ants2-Desktop_Qt_5_8_0_MSVC2013_32bit-Release/release/ants2.exe",
+	"server" : "d:/ants2/ants2.exe",
 	"server_arguments" : [
 		"-o",
 		"Ants2ServerConsoleOutput.txt"
 	],
-	"port" : 1234,
+	"ip" : "127.0.0.1",
+	"port" : 12345,
 	"server_ports" : [
-		1000,
-		1001,
-		1002,
-		1003
+		10000,
+		10001,
+		10002,
+		10003
 	],
 	"threads" : 4
 }

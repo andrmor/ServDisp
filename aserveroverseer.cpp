@@ -9,11 +9,21 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+AServerOverseer::~AServerOverseer()
+{
+    delete server;
+}
+
+void AServerOverseer::SetIP(const QString &ip)
+{
+    IP = QHostAddress(ip);
+}
+
 bool AServerOverseer::ConfigureFromFile(const QString &fileName)
 {
     QFile f(fileName);
     if (f.open(QIODevice::ReadOnly))
-      {
+    {
         qDebug() << "Reading options from config file:" << fileName;
         QByteArray ba = f.readAll();
         QJsonDocument loadDoc(QJsonDocument::fromJson(ba));
@@ -26,6 +36,9 @@ bool AServerOverseer::ConfigureFromFile(const QString &fileName)
 
         Port = json["port"].toInt();
 
+        QString ips = json["ip"].toString();
+        IP = QHostAddress(ips);
+
         ar = json["server_ports"].toArray();
         for (int i=0; i<ar.size(); i++) AllocatedPorts << ar[i].toInt();
 
@@ -33,7 +46,7 @@ bool AServerOverseer::ConfigureFromFile(const QString &fileName)
 
         f.close();
         return true;
-      }
+    }
     else return false;
 }
 
@@ -45,7 +58,7 @@ bool AServerOverseer::StartListen()
 
     QObject::connect(server, &AWebSocketServer::textMessageReceived, this, &AServerOverseer::onMessageReceived);
 
-    server->StartListen(Port);
+    server->StartListen(IP, Port);
     return true;
 }
 
@@ -86,6 +99,11 @@ bool AServerOverseer::isReady()
         qDebug() << "Port for requests is not defined!";
         return false;
     }
+    if (IP.isNull())
+    {
+        qDebug() << "IP for requests is not defined!";
+        return false;
+    }
     if (AllocatedPorts.isEmpty())
     {
         qDebug() << "No ports were allocated for the servers!";
@@ -97,6 +115,7 @@ bool AServerOverseer::isReady()
     if (!Arguments.isEmpty()) qDebug() << "Extra arguments:" << Arguments;
 
     qDebug() << "Port for requests:" << Port;
+    qDebug() << "IP for requests:" << IP.toString();
     qDebug() << "Allocated server ports:"<< GetListOfPorts();
     qDebug() << "Maximum number of heavy threads:"<<MaxThreads;
     return true;

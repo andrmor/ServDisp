@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QHostAddress>
 
 class QWebSocketServer;
 class QWebSocket;
@@ -15,7 +16,7 @@ public:
     explicit AWebSocketServer(QObject *parent = 0);
     ~AWebSocketServer();
 
-    bool StartListen(quint16 port);
+    bool StartListen(QHostAddress ip, quint16 port);
 
     bool CanReply();
     void ReplyAndCloseConnection(const QJsonObject& json);

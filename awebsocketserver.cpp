@@ -21,19 +21,22 @@ AWebSocketServer::AWebSocketServer(QObject *parent) :
 AWebSocketServer::~AWebSocketServer()
 {
     server->close();
+    server->deleteLater();
 }
 
-bool AWebSocketServer::StartListen(quint16 port)
+bool AWebSocketServer::StartListen(QHostAddress ip, quint16 port)
 {
-    //if ( !server->listen(QHostAddress::Any, port) )
-    if ( !server->listen(QHostAddress::AnyIPv4, port) )
+    qDebug() << "Attempting to start listening...";
+    if ( !server->listen(ip, port) ) //QHostAddress::Any QHostAddress::AnyIPv4
     {
-        qCritical("WebSocket server was unable to start!");
+        QString s = QString("WebSocket server was unable to start listen on ip ") + ip.toString() + " and port " + QString::number(port);
+        qCritical(s.toLatin1().data());
         exit(1);
     }
 
     qDebug() << "Dispatcher for ANTS2 server is listening.";
     qDebug() << "To connect use URL:" << GetUrl();
+    qDebug() << "";
 
     return true;
 }
@@ -126,28 +129,7 @@ void AWebSocketServer::onWatchdogTriggered()
 
 const QString AWebSocketServer::GetUrl() const
 {
-  //return server->serverUrl().toString();
-
-    QString pre = "ws://";
-    QString aft = QString(":") + QString::number(server->serverPort());
-
-    QString local = QHostAddress(QHostAddress::LocalHost).toString();
-
-    QString url = pre + local + aft;
-
-    QString ip;
-    for (const QHostAddress &address : QNetworkInterface::allAddresses())
-    {
-        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
-        {
-            ip = address.toString();
-            break;
-        }
-    }
-    if ( !ip.isEmpty() )
-        url += QStringLiteral("  or  ") + pre + ip + aft;
-
-    return url;
+    return server->serverUrl().toString();
 }
 
 int AWebSocketServer::GetPort() const
